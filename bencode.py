@@ -1,43 +1,33 @@
 import re
 
-reg_dict = re.compile(r'd(.*?)e')
-reg_list = re.compile(r'l(.*?)e')
-reg_string = re.compile(r'(\d+):(.*?){\1}')
-reg_integer = re.compile(r'i(\d+)e')
+LIST_START = 'list_start'
+LIST_END = 'list_end'
+STR_START = 'str_start'
+STR_END = 'str_end'
+INT_START = 'int_start'
+INT_END = 'int_end'
+DICT_START = 'dict_start'
+DICT_END = 'dict_end'
+KEY_START = 'key_start'
+KEY_END = 'key_end'
+VAL_START = 'val_start'
+VAL_END = 'val_end'
 
-current = '_dict'
+DICT = 'dict'
+INT = 'int'
+STR = 'str'
+LIST = 'list'
+NONE = None
+
+# reg_dict = re.compile(r'd(.*?)e')
+# reg_list = re.compile(r'l(.*?)e')
+# reg_string = re.compile(r'(\d+):(.*?){\1}')
+# reg_integer = re.compile(r'i(\d+)e')
+
 root = None
-current_element = None
-
-def _str(bt, str):
-    print('string')
-
-def _int(bt, num):
-    print('integer')
-
-def _list(bt, lst):
-    print('list')
-
-def _dict(bt, dct):
-    print('dict')
-
-def start(bt):
-    global current, root, current_element
-    print('current', current)
-    if re.match(r'\d', bt.decode('ISO-8859-1')):
-        current = '_str'
-    elif bt == b'i':
-        current = '_int'
-    elif bt == b'l':
-        current = '_list'
-    elif bt == b'd':
-        current = '_dict'
-    func = globals()[current]
-    if root == None:
-        root = func(bt)
-    else:
-        current_element = func(bt)
-
+elements_stack = list()
+events_stack = list()
+current_state = NONE
 
 def decode(filename):
     elements = list()
@@ -46,12 +36,43 @@ def decode(filename):
     with open(filename, mode='rb') as torrent:
         bt = torrent.read(1)
         while bt:
-            start(bt)
-            if (bt != b'e'):
-                element.append(bt)
-            else:
-                elements.append(element)
-                #print(element)
-                break
-                element = list()
+            global root, elements_stack, events_stack, current_state
+            if re.match(r'\d', bt.decode('ISO-8859-1')):#bt.decode('ISO-8859-1')
+                print(current_state)
+                length = bt.decode('ISO-8859-1')
+                if current_state == DICT_START:
+                    current_state = KEY_START
+                elif current_state == KEY_START:
+                    current_state = VAL_START
+                else:
+                    current_state = STR_START
+                events_stack.append(current_state)
+                bt = torrent.read(1)
+                while (bt.decode('ISO-8859-1') != ':'):
+                    length += bt.decode('ISO-8859-1')
+                    bt = torrent.read(1)
+                str_bytes = torrent.read(int(length))
+                if current_state == KEY_START:
+                    print('key', str_bytes.decode('UTF-8'))
+                elif current_state == VAL_START:
+                    print('value', str_bytes.decode('UTF-8'))
+                else:
+                    print('string', str_bytes.decode('UTF-8'))
+                elements_stack.append(str_bytes.decode('UTF-8'))
+
+            elif bt == b'i':
+                elements_stack.append(int())
+                events_stack.append(INT_START)
+                current_state = INT_START
+            elif bt == b'l':
+                elements_stack.append(list())
+                events_stack.append(LIST_START)
+                current_state = LIST_START
+            elif bt == b'd':
+                elements_stack.append(dict())
+                events_stack.append(DICT_START)
+                current_state = DICT_START
+            elif bt == b'e':
+                pass
+                # last_event = events_stack.pop()
             bt = torrent.read(1)
