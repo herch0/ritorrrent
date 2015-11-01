@@ -1,3 +1,3 @@
-import bencode
+import bencode2
 
-bencode.decode('torrent.torrent')
+bencode2.init('torrent.torrent')
