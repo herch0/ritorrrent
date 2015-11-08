@@ -1,3 +1,3 @@
-import bencode2
+import bencoding
 
-bencode2.init('torrent.torrent')
+bencoding.init('Mushishi Zoku Shou.torrent')
