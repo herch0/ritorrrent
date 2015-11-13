@@ -3,7 +3,7 @@ import re
 
 content = None
 
-def init(filename):
+def go(filename):
     global content
     with open(filename, mode='rb') as torrent:
         list_bytes = list()
@@ -14,7 +14,10 @@ def init(filename):
             list_bytes.append(bt)
         list_bytes.reverse()
         root_dict = bdecode(list_bytes)
-        print(root_dict)
+        return root_dict
+
+def bencode(dct):
+
 
 def bdecode(data_list):
     bt = data_list.pop()
