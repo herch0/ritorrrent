@@ -1,7 +1,10 @@
 import urllib.request as request
 import urllib.parse as parse
+import hashlib
 
 import bencoding
+
+sh1 = hashlib.sha1()
 
 port_range = range(6881, 6889)
 
