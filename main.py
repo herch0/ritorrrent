@@ -1,45 +1,15 @@
 import urllib.request as request
 import urllib.parse as parse
 import hashlib
+import collections
 
 import bencoding
-
-# on doit encoder le dictionnaire "info" dans un ordre spécifique
-# pour avoir le même hash que celui du tracker
-# def infodict_bencode(infodict):
-#     keys = ['piece length', 'pieces', 'private', 'name', 'length', 'md5sum', 'files']
-#     string = 'd'
-#     string += bencoding.str_bencode(keys[0])
-#     string += bencoding.int_bencode(infodict[keys[0]])
-#     string += bencoding.str_bencode(keys[1])
-#     string += bencoding.str_bencode(infodict[keys[1]])
-#     if keys[2] in infodict:
-#         string += bencoding.str_bencode(keys[2])
-#         string += bencoding.int_bencode(infodict[keys[2]])
-#     string += bencoding.str_bencode(keys[3])
-#     string += bencoding.str_bencode(infodict[keys[3]])
-#     # si un seul fichier
-#     if keys[4] in infodict:
-#         string += bencoding.str_bencode(keys[4])
-#         string += bencoding.int_bencode(infodict[keys[4]])
-#         string += bencoding.str_bencode(keys[5])
-#         string += bencoding.str_bencode(infodict[keys[5]])
-#     else:# sinon si plusieurs fichiers
-#         string += bencoding.str_bencode(keys[6])
-#         string += bencoding.list_bencode(infodict[keys[6]])
-#     # end elif
-#     string += 'e'
-#     return string
 
 port_range = range(6881, 6889)
 
 torrent_dict = bencoding.go('torrent.torrent')
 
 info_dict = torrent_dict['info']
-
-print("============================================")
-
-# print(info_dict)
 
 size = 0
 if 'length' in info_dict:
@@ -49,14 +19,9 @@ else:
         size += file['length']
 
 infos_bencode = bencoding.dict_bencode(info_dict)
-# infos_bencode = "4:info"+infos_bencode+"e"
-# print(infos_bencode)
 
 sh1 = hashlib.sha1(infos_bencode.encode('ISO-8859-1'))
-# sh1.update(infos_bencode.encode())
 info_hash = sh1.digest()
-
-print('hash', info_hash)
 
 # http://open.nyaatorrents.info:6544/announce?info_hash=%e9%5e%c3%a2%055%c0MOp%f3%be3%00%25%89%cc%08%ac7&peer_id=-TR2820-k8geysmrwwsr&port=51413&uploaded=0&downloaded=0&left=0&numwant=80&key=7133af01&compact=1&supportcrypto=1&event=started
 
@@ -91,4 +56,31 @@ url = tracker_url + "?" + encoded_params
 print(url)
 
 with request.urlopen(url) as req:
-    print(req.read().decode('ISO-8859-1'))
+    reponse = req.read().decode('ISO-8859-1')
+    print(reponse)
+    l = [x.encode() for x in reponse]
+    l.reverse()
+    dict_reponse = bencoding.bdecode(l, 'UTF-8')
+    # print(repr(dict_reponse))
+    if ("failure reason" in dict_reponse):
+        print('Erreur tracker:', dict_reponse['failure reason'])
+    else:
+        if ("warning message" in dict_reponse):
+            print('Avertissement tracker:', dict_reponse['warning message'])
+        interval = dict_reponse['interval']
+        min_interval = dict_reponse['min interval']
+        tracker_id = dict_reponse['tracker id'] if 'tracker id' in dict_reponse else ''
+        complete = dict_reponse['complete']
+        incomplete = dict_reponse['incomplete']
+        peers = dict_reponse['peers']
+        if (type(peers) is collections.OrderedDict):# dict model
+            pass
+        else:# binary model
+            # p = [x.encode() for x in peers]
+            print(len(peers))
+            # for i in range(0, len(peers), 6):
+            #     peer = peers[i:(i+6)]
+            #     ip = [peer[i] for i in range(4)]
+            #     print(ip)
+
+# fin with

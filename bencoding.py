@@ -83,20 +83,20 @@ def dict_bencode(dct):
     return dct_bencoded
 # end dct_bencode
 
-def bdecode(data_list):
+def bdecode(data_list, strencoding="ISO-8859-1"):
     bt = data_list.pop()
-    # print(bt)
+    print(bt)
     if re.match(r'\d', bt.decode('us-ascii')):
         strlen = bt.decode('us-ascii')
         bt = data_list.pop()
+        print(bt)
         while re.match(r'\d', bt.decode('us-ascii')):
             strlen += bt.decode('us-ascii')
             bt = data_list.pop()
+            print(bt)
         string = ''
         for i in range(int(strlen)):
-            string += data_list.pop().decode('ISO-8859-1')
-            # print(string)
-        # print('string', string)
+            string += data_list.pop().decode(strencoding)
         return string
     elif bt == b'i':
         nombre = ''
